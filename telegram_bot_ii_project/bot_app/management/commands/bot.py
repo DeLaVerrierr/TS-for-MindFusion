@@ -1,18 +1,15 @@
 from django.core.management.base import BaseCommand
-from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
-from bot_app.models import UserProfile,Character,DialogMessage
+from bot_app.models import UserProfile, Character, DialogMessage
 import requests
 import json
-from telegram.ext import CommandHandler, CallbackContext
-from telegram.ext import CommandHandler, CallbackContext
 from django.utils import timezone
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CommandHandler, CallbackContext, CallbackQueryHandler
 from datetime import datetime
 
-
 MARO_STATE, EINSTEIN_STATE = range(2)
+
 
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
@@ -79,20 +76,19 @@ class Command(BaseCommand):
 
             message_text = f"Привет, {user.first_name}! Я - ваш бот. Я могу сделать много полезных вещей."
 
-
             button_text = "Перейти в Telegram Web App"
             web_app_url = "https://web.telegram.org"
             button_url = f"{web_app_url}/"
             keyboard = InlineKeyboardMarkup([[InlineKeyboardButton(button_text, url=button_url)]])
 
-            #приветственное сообщение кнопкой
+            # приветственное сообщение кнопкой
             update.message.reply_text(message_text, reply_markup=keyboard)
 
-            #событие регистрации в Amplitude
+            # событие регистрации в Amplitude
             current_time = timezone.now()
             send_amplitude_event(user.id, user.username, user.first_name, user.last_name, current_time)
 
-            #запись UserProfile в базе данных
+            # запись UserProfile в базе данных
             user_profile, created = UserProfile.objects.get_or_create(
                 chat_id=user.id,
                 defaults={
@@ -108,17 +104,14 @@ class Command(BaseCommand):
             else:
                 print("User profile already exists:", user_profile)
 
-
         def menu(update: Update, context: CallbackContext):
             user = update.effective_user
 
-            #событие "Открыто меню" в Amplitude
+            # событие "Открыто меню" в Amplitude
             send_amplitude_event(user.id, user.username, user.first_name, user.last_name,
                                  datetime.now())
 
-
             menu_text = "Выберите опцию из меню:"
-
 
             keyboard = InlineKeyboardMarkup([
                 [
@@ -127,7 +120,7 @@ class Command(BaseCommand):
                 ]
             ])
 
-            #сообщение с клавиатурой
+            # сообщение с клавиатурой
             update.message.reply_text(menu_text, reply_markup=keyboard)
 
         def menu_choice(update: Update, context: CallbackContext):
@@ -140,7 +133,7 @@ class Command(BaseCommand):
 
                 mario = Character.objects.get(name="Марио")
 
-                #запись UserProfile с выбором Марио
+                # запись UserProfile с выбором Марио
                 user_profile, _ = UserProfile.objects.get_or_create(chat_id=user.id)
                 user_profile.choice = "Марио"
                 user_profile.save()
@@ -167,10 +160,9 @@ class Command(BaseCommand):
             elif data == "einstein":
                 send_amplitude_event(user.id, user.username, user.first_name, user.last_name, timezone.now())
 
-
                 einstein = Character.objects.get(name="Альберт Энштейн")
 
-                #запись UserProfile с выбором Альберта Энштейна
+                # запись UserProfile с выбором Альберта Энштейна
                 user_profile, _ = UserProfile.objects.get_or_create(chat_id=user.id)
                 user_profile.choice = "Альберт Энштейн"
                 user_profile.save()
@@ -224,7 +216,7 @@ class Command(BaseCommand):
                 {"role": "user", "content": chatgpt_input},
             ]
 
-            #сообщения в ChatGPT и получаем ответ
+            # сообщения в ChatGPT и получаем ответ
             response = send_message_to_chatgpt(messages)
 
             if response and response['choices'][0]['message']['content']:
@@ -239,7 +231,7 @@ class Command(BaseCommand):
                                                message_text=message_text)
                 dialog_message.save()
 
-                send_amplitude_message_received(True,user_id)
+                send_amplitude_message_received(True, user_id)
 
                 # Отправляем ответ пользователю
                 update.message.reply_text(chatgpt_response)
@@ -256,7 +248,6 @@ class Command(BaseCommand):
                 update.message.reply_text(
                     "Извините, произошла ошибка при получении ответа от ChatGPT или ответ пустой.")
 
-
         updater = Updater(token=bot_token, use_context=True)
         dispatcher = updater.dispatcher
         dispatcher.add_handler(CommandHandler("start", start))
@@ -264,7 +255,6 @@ class Command(BaseCommand):
         dispatcher.add_handler(CallbackQueryHandler(menu_choice))
         receive_question_handler = MessageHandler(Filters.text & ~Filters.command, receive_question)
         dispatcher.add_handler(receive_question_handler)
-
 
         updater.start_polling()
         updater.idle()
