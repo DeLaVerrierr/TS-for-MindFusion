@@ -16,12 +16,9 @@ MARO_STATE, EINSTEIN_STATE = range(2)
 
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
-        # Ваши настройки Amplitude
 
         api_key = '810784fe2ce79942706d47d9c83614fc'
         endpoint = 'https://api2.amplitude.com/2/httpapi'
-
-        # Токен вашего бота
         bot_token = '6332428791:AAEK9x9vh7d8YpWvVtckhOdOKDUKRqtlSe8'
 
         # Отправляем событие регистрации в Amplitude
@@ -52,6 +49,7 @@ class Command(BaseCommand):
             else:
                 print("Error:", response.text)
 
+        # Отправляем событие получение ответа от API в Amplitude
         def send_amplitude_message_received(success: bool, user_id: str):
             event_data = {
                 'api_key': api_key,
@@ -79,29 +77,29 @@ class Command(BaseCommand):
         def start(update: Update, context: CallbackContext):
             user = update.effective_user
 
-            # Текст приветственного сообщения с объяснением и прикрепленной кнопкой
             message_text = f"Привет, {user.first_name}! Я - ваш бот. Я могу сделать много полезных вещей."
 
-            # Создаем инлайн кнопку "Перейти в Telegram Web App"
+
             button_text = "Перейти в Telegram Web App"
-            web_app_url = "https://web.telegram.org"  # URL Telegram Web App
+            web_app_url = "https://web.telegram.org"
             button_url = f"{web_app_url}/"
             keyboard = InlineKeyboardMarkup([[InlineKeyboardButton(button_text, url=button_url)]])
 
-            # Отправляем приветственное сообщение с прикрепленной кнопкой
+            #приветственное сообщение кнопкой
             update.message.reply_text(message_text, reply_markup=keyboard)
 
-            # Отправляем событие регистрации в Amplitude
-            current_time = timezone.now()  # Получаем текущее время с учетом часового пояса
+            #событие регистрации в Amplitude
+            current_time = timezone.now()
             send_amplitude_event(user.id, user.username, user.first_name, user.last_name, current_time)
-            # Создаем и сохраняем запись UserProfile в базе данных
+
+            #запись UserProfile в базе данных
             user_profile, created = UserProfile.objects.get_or_create(
                 chat_id=user.id,
                 defaults={
                     'user_name': user.username,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
-                    'time': current_time  # Используем текущее время с учетом часового пояса
+                    'time': current_time
                 }
             )
 
@@ -110,18 +108,18 @@ class Command(BaseCommand):
             else:
                 print("User profile already exists:", user_profile)
 
-        # Функция для обработки команды /menu
+
         def menu(update: Update, context: CallbackContext):
             user = update.effective_user
 
-            # Отправляем событие "Открыто меню" в Amplitude
+            #событие "Открыто меню" в Amplitude
             send_amplitude_event(user.id, user.username, user.first_name, user.last_name,
-                                 datetime.now())  # Используем datetime.now() вместо строки
+                                 datetime.now())
 
-            # Текст сообщения для меню
+
             menu_text = "Выберите опцию из меню:"
 
-            # Создаем инлайн клавиатуру с двумя кнопками
+
             keyboard = InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton("Марио", callback_data="mario"),
@@ -129,7 +127,7 @@ class Command(BaseCommand):
                 ]
             ])
 
-            # Отправляем сообщение с клавиатурой
+            #сообщение с клавиатурой
             update.message.reply_text(menu_text, reply_markup=keyboard)
 
         def menu_choice(update: Update, context: CallbackContext):
@@ -140,10 +138,9 @@ class Command(BaseCommand):
             if data == "mario":
                 send_amplitude_event(user.id, user.username, user.first_name, user.last_name, timezone.now())
 
-                # Получаем информацию о Марио из базы данных
                 mario = Character.objects.get(name="Марио")
 
-                # Обновляем запись UserProfile с выбором Марио
+                #запись UserProfile с выбором Марио
                 user_profile, _ = UserProfile.objects.get_or_create(chat_id=user.id)
                 user_profile.choice = "Марио"
                 user_profile.save()
@@ -170,10 +167,10 @@ class Command(BaseCommand):
             elif data == "einstein":
                 send_amplitude_event(user.id, user.username, user.first_name, user.last_name, timezone.now())
 
-                # Получаем информацию об Альберте Энштейне из базы данных
+
                 einstein = Character.objects.get(name="Альберт Энштейн")
 
-                # Обновляем запись UserProfile с выбором Альберта Энштейна
+                #запись UserProfile с выбором Альберта Энштейна
                 user_profile, _ = UserProfile.objects.get_or_create(chat_id=user.id)
                 user_profile.choice = "Альберт Энштейн"
                 user_profile.save()
@@ -200,13 +197,11 @@ class Command(BaseCommand):
         def send_message_to_chatgpt(messages):
             chatgpt_server_url = 'http://95.217.14.178:8080/candidates_openai/gpt'
 
-            # Формируем JSON-запрос с сообщениями
             data = {
                 'model': 'gpt-3.5-turbo',
                 'messages': messages,
             }
 
-            # Отправляем POST-запрос к серверу ChatGPT
             response = requests.post(chatgpt_server_url, json=data)
 
             if response.status_code == 200:
@@ -223,13 +218,13 @@ class Command(BaseCommand):
             prompt = context.user_data.get('prompt', "")
             print(f"Prompt: {prompt}")
 
-            chatgpt_input = f"{context.user_data['character']}: {user_input}"  # Имя Марио перед вопросом
+            chatgpt_input = f"{context.user_data['character']}: {user_input}"
             messages = [
                 {"role": "system", "content": context.user_data['prompt']},
                 {"role": "user", "content": chatgpt_input},
             ]
 
-            # Отправляем сообщения в ChatGPT и получаем ответ
+            #сообщения в ChatGPT и получаем ответ
             response = send_message_to_chatgpt(messages)
 
             if response and response['choices'][0]['message']['content']:
@@ -261,23 +256,15 @@ class Command(BaseCommand):
                 update.message.reply_text(
                     "Извините, произошла ошибка при получении ответа от ChatGPT или ответ пустой.")
 
-        # Настройки бота
+
         updater = Updater(token=bot_token, use_context=True)
         dispatcher = updater.dispatcher
-
-        # Добавляем обработчик команды /start
         dispatcher.add_handler(CommandHandler("start", start))
-
-        # Добавляем обработчик команды /menu
         dispatcher.add_handler(CommandHandler("menu", menu))
-
-        # Добавляем обработчик выбора опции из меню
         dispatcher.add_handler(CallbackQueryHandler(menu_choice))
-
         receive_question_handler = MessageHandler(Filters.text & ~Filters.command, receive_question)
         dispatcher.add_handler(receive_question_handler)
 
 
-        # Запускаем бота
         updater.start_polling()
         updater.idle()
