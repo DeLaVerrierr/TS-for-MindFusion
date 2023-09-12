@@ -14,9 +14,9 @@ MARO_STATE, EINSTEIN_STATE = range(2)
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
 
-        api_key = '810784fe2ce79942706d47d9c83614fc'
+        api_key = '' #Amplitude
         endpoint = 'https://api2.amplitude.com/2/httpapi'
-        bot_token = '6332428791:AAEK9x9vh7d8YpWvVtckhOdOKDUKRqtlSe8'
+        bot_token = ''
 
         # Отправляем событие регистрации в Amplitude
         def send_amplitude_event(user_id, user_name, name, surname, time):
