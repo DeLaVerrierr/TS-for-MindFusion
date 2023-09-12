@@ -74,7 +74,7 @@ class Command(BaseCommand):
         def start(update: Update, context: CallbackContext):
             user = update.effective_user
 
-            message_text = f"Привет, {user.first_name}! Я - ваш бот. Я могу сделать много полезных вещей."
+            message_text = f"Привет, {user.first_name}! Я - ваш бот. Я могу сделать много полезных вещей.Например /menu"
 
             button_text = "Перейти в Telegram Web App"
             web_app_url = "https://web.telegram.org"
@@ -187,7 +187,7 @@ class Command(BaseCommand):
                 return EINSTEIN_STATE
 
         def send_message_to_chatgpt(messages):
-            chatgpt_server_url = 'http://95.217.14.178:8080/candidates_openai/gpt'
+            chatgpt_server_url = ''
 
             data = {
                 'model': 'gpt-3.5-turbo',
